@@ -11,9 +11,24 @@ interface Point { x: number; y: number; }
 
 class SoundEngine {
     ctx: AudioContext | null = null;
+    noiseBuffer: AudioBuffer | null = null;
 
     init() {
-        if (!this.ctx) this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        if (!this.ctx) {
+            this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            this.noiseBuffer = this.createNoiseBuffer();
+        }
+    }
+
+    private createNoiseBuffer() {
+        if (!this.ctx) return null;
+        const bufferSize = this.ctx.sampleRate * 2;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const output = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            output[i] = Math.random() * 2 - 1;
+        }
+        return buffer;
     }
 
     private playTone(freq: number, type: OscillatorType, duration: number, volume: number) {
@@ -30,10 +45,38 @@ class SoundEngine {
         osc.stop(this.ctx.currentTime + duration);
     }
 
-    shoot() { this.playTone(440, 'square', 0.1, 0.05); }
-    explosion() { this.playTone(100, 'sawtooth', 0.3, 0.1); }
-    hit() { this.playTone(150, 'sine', 0.2, 0.1); }
-    bossSpawn() { this.playTone(80, 'sawtooth', 1.0, 0.1); }
+    shoot() {
+        if (!this.ctx || !this.noiseBuffer) return;
+        
+        // Use noise for a "realistic" crack/gunshot sound
+        const noiseSource = this.ctx.createBufferSource();
+        noiseSource.buffer = this.noiseBuffer;
+        
+        const noiseGain = this.ctx.createGain();
+        const duration = 0.08;
+        const volume = 0.025; // Kept low to not be "noisy"
+
+        noiseGain.gain.setValueAtTime(volume, this.ctx.currentTime);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+        
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'highpass';
+        filter.frequency.value = 1000;
+
+        noiseSource.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(this.ctx.destination);
+        
+        noiseSource.start();
+        noiseSource.stop(this.ctx.currentTime + duration);
+
+        // Add a small metallic "ping" for sci-fi feel
+        this.playTone(880, 'sine', 0.05, 0.01);
+    }
+
+    explosion() { this.playTone(60, 'sawtooth', 0.4, 0.08); }
+    hit() { this.playTone(150, 'sine', 0.2, 0.05); }
+    bossSpawn() { this.playTone(80, 'sawtooth', 1.0, 0.05); }
 }
 
 const sounds = new SoundEngine();
