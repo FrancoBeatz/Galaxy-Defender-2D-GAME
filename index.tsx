@@ -374,12 +374,19 @@ const App: React.FC = () => {
             if (keys['Space']) fire();
 
             const elapsed = (time - gameData.current.startTime) / 1000;
-            const diffMult = 1 + (wave * 0.25) + (elapsed / 240);
+            // Dynamic Difficulty Scaling: Based on wave, time, and score
+            const scoreFactor = score / 5000;
+            const timeFactor = elapsed / 180;
+            const waveFactor = (wave - 1) * 0.3;
+            const diffMult = 1 + waveFactor + timeFactor + scoreFactor;
+
             const enemySpeed = 2.4 * diffMult;
-            const spawnRate = Math.max(250, 1800 / diffMult);
+            const spawnRate = Math.max(200, 1800 / diffMult);
 
             if (gameData.current.enemiesDefeated >= wave * 15 && !boss) {
-                const bossHP = 150 + (wave * 100);
+                // Boss HP scales with wave, time, and score
+                const baseBossHP = 150 + (wave * 100);
+                const bossHP = Math.floor(baseBossHP * (1 + (elapsed / 300) + (score / 10000)));
                 gameData.current.boss = new Boss(canvas.width, bossHP);
                 sounds.init();
             }
