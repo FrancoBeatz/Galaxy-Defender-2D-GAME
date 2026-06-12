@@ -1,6 +1,5 @@
 {
-  "description": "Galaxy Defender: 3D Neon Strike. A high-performance 3D space shooter built with Three.js and React, featuring realistic lighting, boss fights, and immersive audio.",
+  "description": "Galaxy Defender: Neon Strike. A polished React-based space shooter with synthesized audio, boss fights, and mobile controls.",
   "requestFramePermissions": [],
-  "name": "Galaxy Defender 3D",
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "name": "Galaxy Defender"
 }
